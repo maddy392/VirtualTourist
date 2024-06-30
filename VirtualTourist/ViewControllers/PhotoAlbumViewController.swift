@@ -13,7 +13,6 @@ class PhotoAlbumViewController: UIViewController {
     
     var pin: Pin!
     var photos: [Photo] = []
-//    var photoURLs: [String] = []
     var dataController: DataController!
     
     @IBOutlet weak var collectionView: UICollectionView!
@@ -24,6 +23,8 @@ class PhotoAlbumViewController: UIViewController {
         collectionView.dataSource = self
         collectionView.delegate = self
         fetchPhotos()
+        
+        self.title = pin.name
     }
     
 //    func createLayout() -> UICollectionViewLayout {

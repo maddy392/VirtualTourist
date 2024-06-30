@@ -22,8 +22,10 @@ class TravelLocationsMapViewController: UIViewController {
         
         setupLongPressGesture()
         mapView.delegate = self
-//        dataController.wipeAllData()
+        
         fetchPins()
+        // updateExistingPinsWithNames()
+        // dataController.wipeAllData()
     }
     
     func setupLongPressGesture() {
@@ -60,11 +62,23 @@ class TravelLocationsMapViewController: UIViewController {
         annotation.coordinate = coordinate
         mapView.addAnnotation(annotation)
         
+        let geocoder = CLGeocoder()
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            guard let placemarks = placemarks?.first, error == nil else {
+                print("Reverse geocoding failed: \(error?.localizedDescription ?? "No error info")")
+                return
+            }
+            
+            let name = placemarks.name ?? "Unnamed Location"
+            annotation.title = name
+        
         //
-        dataController.viewContext.perform {
+            self.dataController.viewContext.perform {
             let pin = Pin(context: self.dataController.viewContext)
             pin.latitude = coordinate.latitude
             pin.longitude = coordinate.longitude
+            pin.name = name
             
             do {
                 try self.dataController.viewContext.save()
@@ -75,6 +89,7 @@ class TravelLocationsMapViewController: UIViewController {
             }
         }
     }
+}
     
     
     func fetchImages(for pin: Pin) {
@@ -118,6 +133,37 @@ class TravelLocationsMapViewController: UIViewController {
             }
         }
     }
+    
+    
+    func updateExistingPinsWithNames() {
+        for pin in pins {
+            if pin.name == nil || pin.name == "" {
+                let coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
+                let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+                
+                let geocoder = CLGeocoder()
+                geocoder.reverseGeocodeLocation(location) { placemarks, error in
+                    guard let placemark = placemarks?.first, error == nil else {
+                        print("Reverse geocoding failed: \(error?.localizedDescription ?? "No error info")")
+                        return
+                    }
+                    
+                    let name = placemark.name ?? "Unnamed Location"
+                    pin.name = name
+                    
+                    do {
+                        try self.dataController.viewContext.save()
+                        let annotation = MKPointAnnotation()
+                        annotation.coordinate = coordinate
+                        annotation.title = name
+                        self.mapView.addAnnotation(annotation)
+                    } catch {
+                        print("Failed to save pin name: \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: MKMapViewDelegate
@@ -125,6 +171,21 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         performSegue(withIdentifier: "showPhotoAlbumView", sender: view.annotation)
+    }
+    
+    func mapView(_ mapView: MKMapView, viewFor annotation: any MKAnnotation) -> MKAnnotationView? {
+        let identifier = "pin"
+        var view: MKMarkerAnnotationView
+        if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView {
+            dequeuedView.annotation = annotation
+            view = dequeuedView
+        } else {
+            view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            view.animatesWhenAdded = true
+            view.canShowCallout = true
+            view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+        }
+        return view
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
