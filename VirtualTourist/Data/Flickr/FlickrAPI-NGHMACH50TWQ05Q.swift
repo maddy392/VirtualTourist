@@ -15,14 +15,14 @@ class FlickrAPI {
         let latitude = coordinate.latitude
         let longitude = coordinate.longitude
         let pageNum = Int.random(in: 1...10)
-        let urlString = "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(API_KEY)&lat=\(latitude)&lon=\(longitude)&per_page=25&format=json&nojsoncallback=1&sort=interestingness-desc&page=\(pageNum)"
+        let urlString = "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(API_KEY)&lat=\(latitude)&lon=\(longitude)&per_page=5&format=json&nojsoncallback=1&sort=interestingness-desc&page=\(pageNum)"
         
         guard let url = URL(string: urlString) else {
             completionHandler(nil, nil)
             return
         }
         
-        print("Fetching Flickr Images")
+        print("Starting Fetch")
         DispatchQueue.global(qos: .userInitiated).async {
             let task = URLSession.shared.dataTask(with: url) {
                 data, response, error in
@@ -31,12 +31,14 @@ class FlickrAPI {
                     return
                 }
                 
+                print("Passed guard statement")
                 
                 let decoder = JSONDecoder()
                 do {
                     let responseObject = try decoder.decode(FlickrResponse.self, from: data)
                     let photos = responseObject.photos
                     var photosURL: [String] = []
+                    print(photos)
                     for item in photos.photo {
                         photosURL.append(item.imageUrl)
                     }

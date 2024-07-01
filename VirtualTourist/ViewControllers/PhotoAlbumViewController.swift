@@ -15,34 +15,34 @@ class PhotoAlbumViewController: UIViewController {
     var photos: [Photo] = []
     var dataController: DataController!
     
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var collectionView: UICollectionView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         collectionView.dataSource = self
         collectionView.delegate = self
         fetchPhotos()
-        
         self.title = pin.name
     }
     
-//    func createLayout() -> UICollectionViewLayout {
-//        let layout = UICollectionViewFlowLayout()
-//        let padding: CGFloat = 10
-//        let itemSize = (view.frame.width - padding * 4) / 3
-//        layout.sectionInset = UIEdgeInsets(top: padding, left: padding, bottom: padding, right: padding)
-//        layout.minimumLineSpacing = padding
-//        layout.minimumInteritemSpacing = padding
-//        
-//        return layout
-//    }
-    
     func fetchPhotos() {
+        print("Fetching photos from database for pin : \(pin.name ?? "no name")")
         if let photosArray = pin.photos?.allObjects as? [Photo] {
             photos = photosArray
-            collectionView.reloadData()
+        } else {
+            print("No photos available")
+            createPlaceholderPhoto()
         }
+        collectionView.reloadData()
+    }
+    
+    func createPlaceholderPhoto() {
+        let placeholderPhoto = Photo(context: dataController.viewContext)
+        placeholderPhoto.pin = pin
+        placeholderPhoto.url = nil
+        placeholderPhoto.image = UIImage(named: "PosterPlaceholder")?.jpegData(compressionQuality: 1.0)
+        photos.append(placeholderPhoto)
     }
     
     func clearExistingPhotos() {
@@ -62,54 +62,44 @@ class PhotoAlbumViewController: UIViewController {
         }
     }
     
-    func fetchImages() {
+    func fetchPhotoURLs() {
         clearExistingPhotos()
+        activityIndicator.startAnimating()
         
         FlickrAPI.fetchImages(coordinate: CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)) { photoURLs, error in
             
             guard let photoURLs = photoURLs, error == nil else {
                 print("Failed to fetch photo URLs: \(error?.localizedDescription ?? "Unknown error")")
+                DispatchQueue.main.async {
+                    self.activityIndicator.stopAnimating()
+                }
                 return
             }
             
             let context = self.dataController.viewContext
             context.perform {
-                let group = DispatchGroup()
-                
                 for urlString in photoURLs {
-                    guard let url = URL(string: urlString) else {continue}
-                    
                     let photo = Photo(context: context)
                     photo.pin = self.pin
-                    photo.image = UIImage(named: "PosterPlaceholder")?.jpegData(compressionQuality: 1.0)
+                    photo.url = urlString
                     self.photos.append(photo)
-                    
-                    group.enter()
-                    URLSession.shared.dataTask(with: url) {
-                        data, response, error in
-                        defer { group.leave() }
-                        
-                        guard let data = data, error == nil else { return }
-                        
-                        photo.image = data
-                    }.resume()
                 }
                 
-                group.notify(queue: .main) {
-                    do {
-                        try context.save()
-                    } catch {
-                        print("Failed to save photos: \(error.localizedDescription)")
-                    }
+                do {
+                    try context.save()
+                } catch {
+                    print("Failed to save photos: \(error.localizedDescription)")
+                }
+                DispatchQueue.main.async {
+                    self.activityIndicator.stopAnimating()
                     self.collectionView.reloadData()
                 }
             }
-
         }
     }
     
     @IBAction func reloadPhotos(_ sender: Any) {
-        fetchImages()
+        fetchPhotoURLs()
     }
 }
 
@@ -121,8 +111,35 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
+        cell.configureWithPlaceholder()
         let photo = photos[indexPath.item]
-        cell.configure(photo: photo)
+        
+        if let imageData = photo.image {
+            print("Loading already existing data")
+            cell.configureWithImageData(imageData)
+        } else if let urlString = photo.url, let url = URL(string: urlString) {
+            print("Loading data for image: \(urlString)")
+                URLSession.shared.dataTask(with: url) {
+                    data, response, error in
+                    guard let data = data, error == nil else {
+                        print("Failed to download image: \(error?.localizedDescription ?? "Unknown error")")
+                        return
+                    }
+                    
+                    DispatchQueue.main.async {
+                        cell.configureWithImageData(data)
+                    }
+                    
+                    self.dataController.viewContext.perform {
+                        photo.image = data
+                        do {
+                            try self.dataController.viewContext.save()
+                        } catch {
+                            print("Failed to save image data: \(error.localizedDescription)")
+                        }
+                    }
+                }.resume()
+            }
         return cell
     }
     
@@ -150,31 +167,38 @@ extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let padding: CGFloat = 10
-        let collectionViewSize = collectionView.frame.size.width - padding * 4
+        let collectionViewSize = collectionView.frame.size.width - padding * 2
         
-        let itemSize = collectionViewSize / 1
+        let itemSize = collectionViewSize / 3.0
         return CGSize(width: itemSize, height: itemSize)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 10
+        return 3
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
-        return 10
+        return 3
     }
     
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+          if collectionView.numberOfItems(inSection: section) == 1 {
+               let flowLayout = collectionViewLayout as! UICollectionViewFlowLayout
+              return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: collectionView.frame.width - flowLayout.itemSize.width)
+          }
+          return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+      }
 }
 
 // Custom UICollectionViewCell
 class PhotoCell: UICollectionViewCell {
     @IBOutlet var imageView: UIImageView!
     
-    func configure(photo: Photo) {
+    func configureWithPlaceholder() {
         imageView.image = UIImage(named: "PosterPlaceholder")
-        
-        if let imageData = photo.image {
-            imageView.image = UIImage(data: imageData)
-        }
+    }
+    
+    func configureWithImageData(_ data: Data) {
+        imageView.image = UIImage(data: data)
     }
 }

@@ -22,18 +22,24 @@
                                 <rect key="frame" x="0.0" y="103" width="393" height="715"/>
                                 <standardMapConfiguration key="preferredConfiguration"/>
                             </mapView>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="4tD-Ya-vuB">
+                                <rect key="frame" x="186.66666666666666" y="450.66666666666669" width="20" height="20"/>
+                            </activityIndicatorView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
+                            <constraint firstItem="4tD-Ya-vuB" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="3jk-el-RPO"/>
                             <constraint firstItem="4f2-ps-UbD" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="J6e-gl-Cgy"/>
                             <constraint firstItem="4f2-ps-UbD" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="QAO-8R-gJL"/>
                             <constraint firstItem="4f2-ps-UbD" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="pAA-ZP-Jg1"/>
+                            <constraint firstItem="4tD-Ya-vuB" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="xjD-rK-rx4"/>
                             <constraint firstItem="4f2-ps-UbD" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="z0I-0t-eDQ"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="z1m-fg-fac"/>
                     <connections>
+                        <outlet property="activityIndicator" destination="4tD-Ya-vuB" id="gln-g7-rzt"/>
                         <outlet property="mapView" destination="4f2-ps-UbD" id="9LP-zi-Zqt"/>
                         <segue destination="j2F-c0-Gym" kind="show" identifier="showPhotoAlbumView" id="agN-vK-Qih"/>
                     </connections>
@@ -85,19 +91,22 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="uIm-bF-l2l">
+                                <rect key="frame" x="186.66666666666666" y="777" width="20" height="20"/>
+                            </activityIndicatorView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="2e3-w2-PkG"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
+                            <constraint firstItem="uIm-bF-l2l" firstAttribute="centerX" secondItem="QRI-5l-Inz" secondAttribute="centerX" id="2v2-xK-8xW"/>
+                            <constraint firstItem="uIm-bF-l2l" firstAttribute="top" secondItem="QRI-5l-Inz" secondAttribute="bottom" constant="8" symbolic="YES" id="Aow-ql-YdJ"/>
                             <constraint firstItem="QRI-5l-Inz" firstAttribute="trailing" secondItem="2e3-w2-PkG" secondAttribute="trailing" constant="-10" id="LP2-cO-9hl"/>
                             <constraint firstItem="QRI-5l-Inz" firstAttribute="top" secondItem="2e3-w2-PkG" secondAttribute="top" id="MkR-gp-c2o"/>
                             <constraint firstItem="QRI-5l-Inz" firstAttribute="leading" secondItem="2e3-w2-PkG" secondAttribute="leading" constant="10" id="aE4-Lp-Lqx"/>
                             <constraint firstItem="QRI-5l-Inz" firstAttribute="bottom" secondItem="2e3-w2-PkG" secondAttribute="bottom" id="f0C-Jc-HCa"/>
                         </constraints>
                     </view>
-                    <toolbarItems>
-                        <barButtonItem style="plain" systemItem="refresh" id="ddX-ZS-iLk"/>
-                    </toolbarItems>
+                    <toolbarItems/>
                     <navigationItem key="navigationItem" id="gFC-D5-tnG">
                         <barButtonItem key="rightBarButtonItem" systemItem="refresh" id="B1K-Ir-dfB">
                             <connections>
@@ -107,6 +116,7 @@
                     </navigationItem>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="activityIndicator" destination="uIm-bF-l2l" id="ojV-OX-3sZ"/>
                         <outlet property="collectionView" destination="QRI-5l-Inz" id="xrX-qm-7Aj"/>
                     </connections>
                 </viewController>
