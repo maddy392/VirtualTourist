@@ -27,7 +27,7 @@ class PhotoAlbumViewController: UIViewController {
     }
     
     func fetchPhotos() {
-        print("Fetching photos from database for pin : \(pin.name ?? "no name")")
+//        print("Fetching photos from database for pin : \(pin.name ?? "no name")")
         if let photosArray = pin.photos?.allObjects as? [Photo] {
             photos = photosArray
         } else {
@@ -115,10 +115,10 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         let photo = photos[indexPath.item]
         
         if let imageData = photo.image {
-            print("Loading already existing data")
+//            print("Loading already existing data")
             cell.configureWithImageData(imageData)
         } else if let urlString = photo.url, let url = URL(string: urlString) {
-            print("Loading data for image: \(urlString)")
+//            print("Loading data for image: \(urlString)")
                 URLSession.shared.dataTask(with: url) {
                     data, response, error in
                     guard let data = data, error == nil else {
